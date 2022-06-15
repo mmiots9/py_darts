@@ -36,10 +36,5 @@ class Scoreboard:
     def check_closing(self, player):
         return "d" in player.darts[-1][-1]
 
-    # add "NA" in visit < 3
-    def add_na(self, player):
-        for visit in player.darts[:-1]:
-            if len(visit) == 1:
-                visit.extend(["NA", "NA"])
-            elif len(visit) == 2:
-                visit.append("NA")
+    def calculate_n_darts(self, player):
+        return len([dart for visit in player.darts for dart in visit])
