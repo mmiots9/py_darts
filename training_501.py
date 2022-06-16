@@ -126,3 +126,27 @@ class Training501:
                 wr.writerow(list(self.metadata[id].values()))
                 wr.writerow(self.darts[id]["visit"])
                 wr.writerow(self.darts[id]["darts"])
+
+    def load_game(self, file_to_read):
+        items = []
+        with open(file_to_read, "r") as myfile:
+            csvReader = csv.reader(myfile)
+            for row in csvReader:
+                items.append(row)
+
+        for header_idx in range(0, len(items), 3):
+            id = items[header_idx][0]
+            self.metadata[id] = {
+                "id": id,
+                "player": items[header_idx][1],
+                "date": items[header_idx][2],
+                "start_time": items[header_idx][3],
+                "end_time": items[header_idx][4],
+                "total_time": items[header_idx][5],
+                "n_darts": items[header_idx][6]
+            }
+            self.darts[id] = {
+                "visit": items[header_idx + 1],
+                "darts": items[header_idx + 2],
+            }
+
