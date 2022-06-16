@@ -3,7 +3,7 @@ from player import Player
 from scoreboard import Scoreboard
 from random import randint, choices
 from string import ascii_lowercase
-import pandas as pd
+import csv
 
 STARTING_SCORE = 501
 TRAINING_ID_PREFIX = "xx"
@@ -12,7 +12,7 @@ TRAINING_ID_PREFIX = "xx"
 class Training501:
 
     def __init__(self):
-        self.metadata = pd.DataFrame()
+        self.metadata = {}
         self.darts = {}
 
     def play_game(self):
@@ -84,31 +84,45 @@ class Training501:
         self.temp_game_end_time = datetime.now().time().replace(microsecond=0)
         self.temp_total_time = self.calculate_total_time()
         self.temp_n_darts = scoreboard.calculate_n_darts(player)
-        game_metadata = pd.DataFrame(
-            {
-                "id": self.temp_game_id,
-                "player": self.temp_player.name,
-                "date": self.temp_game_date,
-                "start_time": self.temp_game_start_time,
-                "end_time": self.temp_game_end_time,
-                "total_time": self.temp_total_time,
-                "n_darts": self.temp_n_darts
-            },
-            index=[self.temp_game_id]
-        )
-        self.metadata = pd.concat([self.metadata, game_metadata])
+        self.metadata[self.temp_game_id] = {
+            "id": self.temp_game_id,
+            "player": self.temp_player.name,
+            "date": self.temp_game_date,
+            "start_time": self.temp_game_start_time,
+            "end_time": self.temp_game_end_time,
+            "total_time": self.temp_total_time,
+            "n_darts": self.temp_n_darts
+        }
 
     def calculate_total_time(self):
         delta_time = timedelta(hours=self.temp_game_end_time.hour - self.temp_game_start_time.hour,
-                         minutes=self.temp_game_end_time.minute - self.temp_game_start_time.minute,
-                         seconds=self.temp_game_end_time.second - self.temp_game_start_time.second)
+                               minutes=self.temp_game_end_time.minute - self.temp_game_start_time.minute,
+                               seconds=self.temp_game_end_time.second - self.temp_game_start_time.second)
         str_time = time(delta_time.seconds // 3600, delta_time.seconds // 60, delta_time.seconds % 60)
         return str_time
 
     def add_darts(self, player):
-        self.darts[self.temp_game_id] = dict(enumerate(player.darts, start=1))
+        visit_list = []
+        visit_n = 0
+        for visit in player.darts:
+            visit_n += 1
+            for _ in visit:
+                visit_list.append(visit_n)
+
+        self.darts[self.temp_game_id] = {
+            "visit": visit_list,
+            "darts": [dart for visit in player.darts for dart in visit]
+        }
 
     def remove_temp_attributes(self):
         temp_attr_list = [attr for attr in list(self.__dict__.keys()) if "temp_" in attr]
         for attr in temp_attr_list:
             self.__delattr__(attr)
+
+    def save_game(self, file_to_write):
+        with open(file=file_to_write, mode="a") as my_file:
+            wr = csv.writer(my_file)
+            for id in self.metadata.keys():
+                wr.writerow(list(self.metadata[id].values()))
+                wr.writerow(self.darts[id]["visit"])
+                wr.writerow(self.darts[id]["darts"])
